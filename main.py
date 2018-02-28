@@ -89,7 +89,7 @@ if __name__ == '__main__':
 
 
     #init gym
-    env = gym.make('CartPole-v0')
+    env = gym.make('CartPole-v1')
 
     state_size = env.observation_space.shape[0]
     action_size = env.action_space.n
