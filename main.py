@@ -1,18 +1,26 @@
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 import numpy as np
+import keras
 from keras.models import Sequential
 from keras.layers import Dense, Activation
 from keras import optimizers
+from keras.callbacks import Callback, TensorBoard, ModelCheckpoint
 from collections import deque
 import random
 import tensorflow as tf
 import gym
+import A2C
+
 
 
 print("Program start:")
 
 ##Hyperparameters
-episodes = 1000 #number of games
+episodes = 5000 #number of games
 
+
+#cb = TensorBoard()
 
 
 class DQNAgent:
@@ -31,6 +39,9 @@ class DQNAgent:
         self.learning_rate = 0.001
         self.model = self._build_model()
 
+    def _customLoss(self, target, pred):
+        return 0
+
     #Build NN
     def _build_model(self):
         model = Sequential()
@@ -44,8 +55,11 @@ class DQNAgent:
         # Output layer with 2 nodes for actions (left, right)
         model.add(Dense(self.action_size, activation='linear'))
 
+        model.summary()
+
         # Compile model
-        model.compile(loss='mse', optimizer=optimizers.Adam(self.learning_rate))
+        model.compile(loss='mse', optimizer=optimizers.Adam(self.learning_rate),
+                      metrics=['accuracy'])
 
         return model
 
@@ -89,12 +103,16 @@ if __name__ == '__main__':
 
 
     #init gym
-    env = gym.make('CartPole-v1')
+    env = gym.make('CartPole-v0')
 
     state_size = env.observation_space.shape[0]
     action_size = env.action_space.n
 
-    agent = DQNAgent(state_size, action_size)
+    #Deep reinforcement
+    #agent = DQNAgent(state_size, action_size)
+
+    #A2C agent
+    agent2 = A2C.A2CAgent(state_size, action_size)
 
     #Iterate game
     for e in range(episodes):
@@ -108,24 +126,30 @@ if __name__ == '__main__':
             env.render()
 
             #decide action
-            action = agent.act(state)
+            #action = agent.act(state)
+            action = agent2.get_action(state)
 
             #advance to next state
             next_state, reward, done, _ = env.step(action)
             next_state = np.reshape(next_state, [1, 4])
 
             #Save state, action, reward and done
-            agent.remember(state, action, reward, next_state, done)
+            #agent.remember(state, action, reward, next_state, done)
+
+
+            #A2C
+            agent2.train_model(state, action, reward, next_state, done)
 
             #Next state to current state
             state = next_state
 
             #when game ends
             if done:
+
                 print("episode: {}/{}, score: {}"
                       .format(e, episodes, time_t))
                 break
 
         #train agent
-        if len(agent.memory) > 32:
-            agent.replay(32)
+        #if len(agent.memory) > 32:
+           # agent.replay(32)
